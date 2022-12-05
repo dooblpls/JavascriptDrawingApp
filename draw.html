@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Collaborative Drawing</title>
+  <style>
+    #canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="500" height="500"></canvas>
+  <script>
+    // Create a new WebSocket connection
+    var socket = new WebSocket("ws://192.168.0.213:8080");
+
+    // Get the canvas element and set up the context
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+
+    // Handle incoming messages from the server
+    socket.onmessage = function(event) {
+      var data = JSON.parse(event.data);
+      // Draw a line on the canvas
+      ctx.beginPath();
+      ctx.moveTo(data.x1, data.y1);
+      ctx.lineTo(data.x2, data.y2);
+      ctx.stroke();
+    };
+
+    // Handle mouse events on the canvas
+    var isDrawing = false;
+    var x1 = 0, y1 = 0;
+    canvas.onmousedown = function(event) {
+      isDrawing = true;
+      x1 = event.clientX;
+      y1 = event.clientY;
+    };
+    canvas.onmousemove = function(event) {
+      if (isDrawing) {
+        var x2 = event.clientX;
+        var y2 = event.clientY;
+        // Send a message to the server with the coordinates
+        // of the line to be drawn
+        var message = JSON.stringify({
+          x1: x1,
+          y1: y1,
+          x2: x2,
+          y2: y2
+        });
+		console.log(message);
+        socket.send(message);
+        // Update the starting coordinates for the next line
+        x1 = x2;
+        y1 = y2;
+      }
+    };
+    canvas.onmouseup = function(event) {
+      isDrawing = false;
+    };
+  </script>
+</body>
+</html>
